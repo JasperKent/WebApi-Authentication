@@ -54,7 +54,6 @@ namespace WebApiAuthentication.Controllers
         [HttpPost("Login")]
         [ProducesResponseType(StatusCodes.Status401Unauthorized)]
         [ProducesResponseType(StatusCodes.Status500InternalServerError)]
-
         public async Task<IActionResult> Login ([FromBody]LoginModel model)
         {
             var user = await _userManager.FindByNameAsync(model.Username);

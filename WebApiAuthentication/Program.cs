@@ -67,6 +67,20 @@ builder.Services.AddAuthentication(options =>
     };
 });
 
+const string policy = "defaultPolicy";
+
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy(policy,
+                      p =>
+                      {
+                          p.AllowAnyHeader();
+                          p.AllowAnyMethod();
+                          p.AllowAnyHeader();
+                          p.AllowAnyOrigin();
+                      });
+});
+
 var app = builder.Build();
 
 //PopulateDb();
@@ -79,6 +93,8 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseHttpsRedirection();
+
+app.UseCors(policy);
 
 app.UseAuthentication();
 app.UseAuthorization();
