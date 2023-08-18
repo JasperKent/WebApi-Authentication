@@ -57,8 +57,12 @@ namespace WebApiAuthentication.Controllers
                 {
                     Title = g.Key,
                     Rating = Math.Round(g.Average(r => r.Rating), 2)
-                });
+                }).ToList();
 
+            int id = 1;
+
+            summaries.ForEach(r => r.Id = id++);
+                
             return Ok(summaries);
         }
 
