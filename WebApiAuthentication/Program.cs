@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
+using System.IdentityModel.Tokens.Jwt;
 using System.Text;
 using WebApiAuthentication.Authentication;
 using WebApiAuthentication.DataAccess.Context;
@@ -48,6 +49,8 @@ builder.Services.AddSwaggerGen(options=>
     options.AddSecurityRequirement(new OpenApiSecurityRequirement { { scheme, Array.Empty<string>() } });
 });
 
+using var loggerFactory = LoggerFactory.Create(b => b.SetMinimumLevel(LogLevel.Trace).AddConsole());
+
 var secret = builder.Configuration["JWT:Secret"] ?? throw new InvalidOperationException("Secret not configured");
 
 builder.Services.AddAuthentication(options =>
@@ -63,7 +66,12 @@ builder.Services.AddAuthentication(options =>
     {
         ValidIssuer = builder.Configuration["JWT:ValidIssuer"],
         ValidAudience = builder.Configuration["JWT:ValidAudience"],
-        IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(secret))
+        IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(secret)),
+    };
+    options.Events = new JwtBearerEvents
+    {
+        OnChallenge = ctx => LogAttempt(ctx.Request.Headers, "OnChallenge"),
+        OnTokenValidated = ctx => LogAttempt(ctx.Request.Headers, "OnTokenValidated")
     };
 });
 
@@ -102,6 +110,26 @@ app.UseAuthorization();
 app.MapControllers();
 
 app.Run();
+
+Task LogAttempt(IHeaderDictionary headers, string eventType)
+{
+    var logger = loggerFactory.CreateLogger<Program>();
+
+    var authorizationHeader = headers["Authorization"].FirstOrDefault();
+
+    if (authorizationHeader is null)
+        logger.LogInformation($"{eventType}. JWT not present");
+    else
+    {
+        string jwtString = authorizationHeader.Substring("Bearer ".Length);
+
+        var jwt = new JwtSecurityToken(jwtString);
+
+        logger.LogInformation($"{eventType}. Expiration: {jwt.ValidTo.ToLongTimeString()}. System time: {DateTime.UtcNow.ToLongTimeString()}");
+    }
+
+    return Task.CompletedTask;
+}
 
 //void PopulateDb()
 //{
