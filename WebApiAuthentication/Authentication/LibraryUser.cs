@@ -7,5 +7,7 @@ namespace WebApiAuthentication.Authentication
     {
         public bool RatingsAllowed { get; set; }
         public required ICollection<BookReview> Reviews { get; set; }
+        public string? RefreshToken { get; set; }
+        public DateTime RefreshTokenExpiry { get; set; }
     }
 }
